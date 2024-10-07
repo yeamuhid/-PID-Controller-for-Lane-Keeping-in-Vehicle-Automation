@@ -1,0 +1,65 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+class PIDController:
+    def __init__(self, Kp, Ki, Kd):
+        self.Kp = Kp  # Proportional gain
+        self.Ki = Ki  # Integral gain
+        self.Kd = Kd  # Derivative gain
+        self.prev_error = 0
+        self.integral = 0
+
+    def control(self, error, dt):
+        # Calculate proportional, integral, and derivative terms
+        self.integral += error * dt
+        derivative = (error - self.prev_error) / dt
+        output = self.Kp * error + self.Ki * self.integral + self.Kd * derivative
+        
+        # Update previous error
+        self.prev_error = error
+        return output
+
+# Simulate a simple vehicle system for lane-keeping
+class Vehicle:
+    def __init__(self, initial_position, lane_position, speed=1.0):
+        self.position = initial_position
+        self.lane_position = lane_position  # The center of the lane
+        self.speed = speed
+        self.steering_angle = 0
+
+    def update(self, steering_correction, dt):
+        # Adjust position based on steering angle
+        self.steering_angle = steering_correction
+        self.position += self.speed * np.tan(self.steering_angle) * dt
+
+# Simulation setup
+def simulate_lane_following():
+    vehicle = Vehicle(initial_position=0, lane_position=0)
+    pid = PIDController(Kp=0.1, Ki=0.01, Kd=0.05)
+    
+    time = np.linspace(0, 10, 500)  # 10 seconds of simulation
+    dt = time[1] - time[0]          # Time step
+    positions = []                   # To store the vehicle's positions
+    
+    for t in time:
+        # Calculate error (difference from lane center)
+        error = vehicle.lane_position - vehicle.position
+        
+        # Get steering correction from PID controller
+        steering_correction = pid.control(error, dt)
+        
+        # Update vehicle state
+        vehicle.update(steering_correction, dt)
+        positions.append(vehicle.position)
+
+    # Plot the results
+    plt.plot(time, positions, label="Vehicle Position")
+    plt.axhline(0, color='r', linestyle='--', label="Lane Center")
+    plt.xlabel('Time (s)')
+    plt.ylabel('Lateral Position')
+    plt.title('Vehicle Lane Following Using PID Control')
+    plt.legend()
+    plt.show()
+
+# Run simulation
+simulate_lane_following()
